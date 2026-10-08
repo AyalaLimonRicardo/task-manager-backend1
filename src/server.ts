@@ -1,12 +1,31 @@
 import 'dotenv/config';
 import { app } from './app.js';
+import { connectDatabase } from './config/database.js';
+import { loadEnvironment } from './config/env.js';
 
-const portValue = Number(process.env.PORT ?? 3000);
+const startServer = async (): Promise<void> => {
+  try {
+    const env = loadEnvironment();
 
-if (!Number.isInteger(portValue) || portValue <= 0) {
-  throw new Error('PORT debe ser un entero positivo.');
+    await connectDatabase({
+      uri: env.mongodbUri,
+      dbName: env.mongodbDbName
+    });
+
+    app.listen(env.port, () => {
+      console.log(`API disponible en http://localhost:${env.port}`);
+    });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('[diagnóstico]', error.name, '-', error.message);
+    }
+    console.error(
+      'No fue posible iniciar la API. Revise MONGODB_URI, ' +
+      'el usuario y la lista de acceso de red.'
+    );
+    process.exitCode = 1;
+  }
+  process.exitCode = 1;
 }
 
-app.listen(portValue, () => {
-  console.log(`API disponible en http://localhost:${portValue}`);
-});
+void startServer();
