@@ -1,12 +1,16 @@
-import type { FieldIssue } from '../types/api-error.js';
+export interface ErrorDetail {
+  field?: string;
+  message: string;
+}
+
 export class AppError extends Error {
-    constructor(
-        message: string,
-        public readonly statusCode: number,
-        public readonly code: string,
-        public readonly details?: FieldIssue[]
-    ) {
-        super(message);
-        this.name = 'AppError';
-    }
+  constructor(
+    message: string,
+    public readonly statusCode: number,
+    public readonly code: string = 'APP_ERROR',
+    public readonly details?: ErrorDetail[]
+  ) {
+    super(message);
+    this.name = 'AppError';
+  }
 }

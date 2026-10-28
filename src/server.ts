@@ -1,31 +1,16 @@
-import 'dotenv/config';
-import { app } from './app.js';
+import { env } from './config/env.js';
 import { connectDatabase } from './config/database.js';
-import { loadEnvironment } from './config/env.js';
+import { app } from './app.js';
 
-const startServer = async (): Promise<void> => {
-  try {
-    const env = loadEnvironment();
-
-    await connectDatabase({
-      uri: env.mongodbUri,
-      dbName: env.mongodbDbName
-    });
-
-    app.listen(env.port, () => {
-      console.log(`API disponible en http://localhost:${env.port}`);
-    });
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error('[diagnóstico]', error.name, '-', error.message);
-    }
-    console.error(
-      'No fue posible iniciar la API. Revise MONGODB_URI, ' +
-      'el usuario y la lista de acceso de red.'
-    );
-    process.exitCode = 1;
-  }
-  process.exitCode = 1;
+try {
+  await connectDatabase();
+  console.log('Conexión con MongoDB establecida.');
+} catch {
+  // No se imprime el error original: puede contener la URI o el host del clúster.
+  console.error('No fue posible conectar con MongoDB. Revisa .env, el usuario y el acceso de red en Atlas.');
+  process.exit(1);
 }
 
-void startServer();
+app.listen(env.port, () => {
+  console.log(`API disponible en http://localhost:${env.port}`);
+});

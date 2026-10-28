@@ -33,6 +33,6 @@
   "dependencies": {
     "dotenv": "^18.0.4",
     "express": "^5.2.1",
-    "mongoose": "^8.24.5"
+    "mongoose": "^8.24.7"
   }
 }

@@ -1,16 +1,20 @@
 import mongoose from 'mongoose';
+import { env } from './env.js';
 
-export interface DatabaseConfig {
-  uri: string;
-  dbName: string;
-}
-
-export const connectDatabase = async (
-  config: DatabaseConfig
-): Promise<void> => {
-  await mongoose.connect(config.uri, {
-    dbName: config.dbName,
+export const connectDatabase = async (): Promise<void> => {
+  await mongoose.connect(env.mongodbUri, {
+    dbName: env.mongodbDbName,
     serverSelectionTimeoutMS: 5000
   });
-  console.log('Conexión con MongoDB establecida.');
+};
+
+export const pingDatabase = async (): Promise<boolean> => {
+  const db = mongoose.connection.db;
+  if (mongoose.connection.readyState !== 1 || !db) return false;
+  try {
+    await db.admin().ping();
+    return true;
+  } catch {
+    return false;
+  }
 };
