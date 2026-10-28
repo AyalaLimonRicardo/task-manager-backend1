@@ -1,0 +1,377 @@
+{
+  "info": {
+    "name": "EC2 F2 A7 CRUD",
+    "description": "Ejecuta la colección completa en orden (Runner). Requiere la API en marcha y conectada a Atlas.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "taskId", "value": "" },
+    { "key": "taskIdHigh", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "01 GET /health",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('200 ok', () => {",
+        "  pm.response.to.have.status(200);",
+        "  pm.expect(pm.response.json().status).to.eql('ok');",
+        "});"
+      ] } }],
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" }
+    },
+    {
+      "name": "02 GET /health/database",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('200 connected', () => {",
+        "  pm.response.to.have.status(200);",
+        "  pm.expect(pm.response.json().database.status).to.eql('connected');",
+        "});"
+      ] } }],
+      "request": { "method": "GET", "url": "{{baseUrl}}/health/database" }
+    },
+    {
+      "name": "03 POST crear tarea (sin priority)",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const body = pm.response.json();",
+        "pm.collectionVariables.set('taskId', body.data.id);",
+        "pm.test('201, pending y priority medium', () => {",
+        "  pm.response.to.have.status(201);",
+        "  pm.expect(body.data.status).to.eql('pending');",
+        "  pm.expect(body.data.priority).to.eql('medium');",
+        "  pm.expect(body.data.id).to.match(/^[0-9a-f]{24}$/);",
+        "  pm.expect(body.data).to.not.have.property('_id');",
+        "  pm.expect(body.data).to.not.have.property('__v');",
+        "});"
+      ] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"title\":\"Preparar evidencia del CRUD\"}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/tasks"
+      }
+    },
+    {
+      "name": "04 POST crear tarea con priority high",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const body = pm.response.json();",
+        "pm.collectionVariables.set('taskIdHigh', body.data.id);",
+        "pm.test('201 y priority high', () => {",
+        "  pm.response.to.have.status(201);",
+        "  pm.expect(body.data.priority).to.eql('high');",
+        "});"
+      ] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"title\":\"Tarea urgente\",\"priority\":\"high\"}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/tasks"
+      }
+    },
+    {
+      "name": "05 GET listar tareas",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const body = pm.response.json();",
+        "pm.test('200 y contiene la tarea creada', () => {",
+        "  pm.response.to.have.status(200);",
+        "  pm.expect(body.data).to.be.an('array');",
+        "  pm.expect(body.data.some((t) => t.id === pm.collectionVariables.get('taskId'))).to.eql(true);",
+        "});"
+      ] } }],
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/tasks" }
+    },
+    {
+      "name": "06 GET consultar por id",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const body = pm.response.json();",
+        "pm.test('200, mismo id y sin _id/__v', () => {",
+        "  pm.response.to.have.status(200);",
+        "  pm.expect(body.data.id).to.eql(pm.collectionVariables.get('taskId'));",
+        "  pm.expect(body.data).to.not.have.property('_id');",
+        "  pm.expect(body.data).to.not.have.property('__v');",
+        "});"
+      ] } }],
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/tasks/{{taskId}}" }
+    },
+    {
+      "name": "07 PATCH solo title",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const body = pm.response.json();",
+        "pm.test('200, título nuevo y status pending', () => {",
+        "  pm.response.to.have.status(200);",
+        "  pm.expect(body.data.id).to.eql(pm.collectionVariables.get('taskId'));",
+        "  pm.expect(body.data.title).to.eql('Documentar el CRUD persistente');",
+        "  pm.expect(body.data.status).to.eql('pending');",
+        "});"
+      ] } }],
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"title\":\"Documentar el CRUD persistente\"}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/tasks/{{taskId}}"
+      }
+    },
+    {
+      "name": "08 PATCH solo status",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const body = pm.response.json();",
+        "pm.test('200, completed y mismo título', () => {",
+        "  pm.response.to.have.status(200);",
+        "  pm.expect(body.data.status).to.eql('completed');",
+        "  pm.expect(body.data.title).to.eql('Documentar el CRUD persistente');",
+        "});"
+      ] } }],
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"status\":\"completed\"}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/tasks/{{taskId}}"
+      }
+    },
+    {
+      "name": "09 PATCH title, status y priority",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const body = pm.response.json();",
+        "pm.test('200 y cambia updatedAt sin cambiar createdAt', () => {",
+        "  pm.response.to.have.status(200);",
+        "  pm.expect(body.data.title).to.eql('Revisar evidencias');",
+        "  pm.expect(body.data.status).to.eql('pending');",
+        "  pm.expect(body.data.priority).to.eql('high');",
+        "  pm.expect(body.data.updatedAt).to.not.eql(body.data.createdAt);",
+        "});"
+      ] } }],
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"title\":\"Revisar evidencias\",\"status\":\"pending\",\"priority\":\"high\"}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/tasks/{{taskId}}"
+      }
+    },
+    {
+      "name": "10 PATCH actualizar priority a low",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const body = pm.response.json();",
+        "pm.test('200, low y título intacto', () => {",
+        "  pm.response.to.have.status(200);",
+        "  pm.expect(body.data.priority).to.eql('low');",
+        "  pm.expect(body.data.title).to.eql('Revisar evidencias');",
+        "});"
+      ] } }],
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"priority\":\"low\"}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/tasks/{{taskId}}"
+      }
+    },
+    {
+      "name": "11 PATCH /:id/complete (ruta heredada, sin cuerpo)",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const body = pm.response.json();",
+        "pm.test('200 y completed', () => {",
+        "  pm.response.to.have.status(200);",
+        "  pm.expect(body.data.status).to.eql('completed');",
+        "});"
+      ] } }],
+      "request": { "method": "PATCH", "url": "{{baseUrl}}/api/tasks/{{taskId}}/complete" }
+    },
+    {
+      "name": "12 NEG PATCH /api/tasks/1 (id inválido)",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('400 INVALID_ID con requestId', () => {",
+        "  pm.response.to.have.status(400);",
+        "  pm.expect(pm.response.json().error.code).to.eql('INVALID_ID');",
+        "  pm.expect(pm.response.json().error.requestId).to.be.a('string');",
+        "});"
+      ] } }],
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"title\":\"Nuevo\"}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/tasks/1"
+      }
+    },
+    {
+      "name": "13 NEG PATCH ObjectId válido inexistente",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('404 TASK_NOT_FOUND', () => {",
+        "  pm.response.to.have.status(404);",
+        "  pm.expect(pm.response.json().error.code).to.eql('TASK_NOT_FOUND');",
+        "});"
+      ] } }],
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"title\":\"Nuevo\"}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/tasks/507f1f77bcf86cd799439011"
+      }
+    },
+    {
+      "name": "14 NEG PATCH sin application/json",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('415 UNSUPPORTED_MEDIA_TYPE', () => {",
+        "  pm.response.to.have.status(415);",
+        "  pm.expect(pm.response.json().error.code).to.eql('UNSUPPORTED_MEDIA_TYPE');",
+        "});"
+      ] } }],
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "text/plain" }],
+        "body": { "mode": "raw", "raw": "hola", "options": { "raw": { "language": "text" } } },
+        "url": "{{baseUrl}}/api/tasks/{{taskId}}"
+      }
+    },
+    {
+      "name": "15 NEG PATCH JSON mal formado",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('400 INVALID_JSON', () => {",
+        "  pm.response.to.have.status(400);",
+        "  pm.expect(pm.response.json().error.code).to.eql('INVALID_JSON');",
+        "});"
+      ] } }],
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"title\":", "options": { "raw": { "language": "text" } } },
+        "url": "{{baseUrl}}/api/tasks/{{taskId}}"
+      }
+    },
+    {
+      "name": "16 NEG PATCH cuerpo vacío {}",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('422 VALIDATION_ERROR', () => {",
+        "  pm.response.to.have.status(422);",
+        "  pm.expect(pm.response.json().error.code).to.eql('VALIDATION_ERROR');",
+        "});"
+      ] } }],
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/tasks/{{taskId}}"
+      }
+    },
+    {
+      "name": "17 NEG PATCH title con solo espacios",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('422 en title', () => {",
+        "  pm.response.to.have.status(422);",
+        "  pm.expect(pm.response.json().error.details[0].field).to.eql('title');",
+        "});"
+      ] } }],
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"title\":\"   \"}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/tasks/{{taskId}}"
+      }
+    },
+    {
+      "name": "18 NEG PATCH status archived",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('422 en status', () => {",
+        "  pm.response.to.have.status(422);",
+        "  pm.expect(pm.response.json().error.details[0].field).to.eql('status');",
+        "});"
+      ] } }],
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"status\":\"archived\"}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/tasks/{{taskId}}"
+      }
+    },
+    {
+      "name": "19 NEG PATCH campo no permitido (owner)",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('422 e identifica owner', () => {",
+        "  pm.response.to.have.status(422);",
+        "  pm.expect(pm.response.json().error.details.some((d) => d.field === 'owner')).to.eql(true);",
+        "});"
+      ] } }],
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"owner\":\"Ana\"}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/tasks/{{taskId}}"
+      }
+    },
+    {
+      "name": "20 NEG PATCH priority desconocida (urgent)",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('422 con detalle de priority', () => {",
+        "  pm.response.to.have.status(422);",
+        "  pm.expect(pm.response.json().error.details[0].field).to.eql('priority');",
+        "});"
+      ] } }],
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"priority\":\"urgent\"}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/tasks/{{taskId}}"
+      }
+    },
+    {
+      "name": "21 NEG POST priority desconocida (urgent)",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('422 con detalle de priority', () => {",
+        "  pm.response.to.have.status(422);",
+        "  pm.expect(pm.response.json().error.details[0].field).to.eql('priority');",
+        "});"
+      ] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"title\":\"Tarea\",\"priority\":\"urgent\"}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/tasks"
+      }
+    },
+    {
+      "name": "22 DELETE eliminar tarea",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('204 sin cuerpo', () => {",
+        "  pm.response.to.have.status(204);",
+        "  pm.expect(pm.response.text()).to.eql('');",
+        "});"
+      ] } }],
+      "request": { "method": "DELETE", "url": "{{baseUrl}}/api/tasks/{{taskId}}" }
+    },
+    {
+      "name": "23 GET tarea eliminada",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('404 TASK_NOT_FOUND', () => {",
+        "  pm.response.to.have.status(404);",
+        "  pm.expect(pm.response.json().error.code).to.eql('TASK_NOT_FOUND');",
+        "});"
+      ] } }],
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/tasks/{{taskId}}" }
+    },
+    {
+      "name": "24 DELETE de nuevo el mismo id",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('404 TASK_NOT_FOUND', () => {",
+        "  pm.response.to.have.status(404);",
+        "  pm.expect(pm.response.json().error.code).to.eql('TASK_NOT_FOUND');",
+        "});"
+      ] } }],
+      "request": { "method": "DELETE", "url": "{{baseUrl}}/api/tasks/{{taskId}}" }
+    },
+    {
+      "name": "25 DELETE limpiar tarea high",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('204', () => pm.response.to.have.status(204));"
+      ] } }],
+      "request": { "method": "DELETE", "url": "{{baseUrl}}/api/tasks/{{taskIdHigh}}" }
+    },
+    {
+      "name": "26 GET ruta inexistente",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('404 ROUTE_NOT_FOUND', () => {",
+        "  pm.response.to.have.status(404);",
+        "  pm.expect(pm.response.json().error.code).to.eql('ROUTE_NOT_FOUND');",
+        "});"
+      ] } }],
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/nada" }
+    }
+  ]
+}

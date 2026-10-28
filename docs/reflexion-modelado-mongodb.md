@@ -42,3 +42,6 @@ Crear una tarea, detener la API con Ctrl+C, iniciarla de nuevo y comprobar que `
 
 La URI de conexión, el usuario y la contraseña, los nombres de servidores del clúster, los stack traces, los objetos de error completos de Mongoose, y los campos internos `_id` y `__v`.
 
+## Desafío: campo opcional `description`
+
+Se agregó `description` al modelo (opcional, `trim`, máximo 300), a un middleware nuevo `validate-task-description.middleware.ts` que responde `422 VALIDATION_ERROR` con `field: "description"`, al servicio y a la respuesta pública, que solo incluye el campo cuando existe. Una tarea sin `description` sigue siendo válida.

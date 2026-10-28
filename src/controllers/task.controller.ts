@@ -5,7 +5,7 @@ import {
   deleteTask,
   findTaskById,
   listTasks,
-  updateTaskTitle
+  updateTask
 } from '../services/task.service.js';
 
 export const getTasks = async (_req: Request, res: Response): Promise<void> => {
@@ -17,7 +17,11 @@ export const getTask = async (_req: Request, res: Response): Promise<void> => {
 };
 
 export const postTask = async (_req: Request, res: Response): Promise<void> => {
-  const task = await createTask(res.locals.taskTitle, res.locals.taskDescription);
+  const task = await createTask({
+    title: res.locals.taskTitle,
+    description: res.locals.taskDescription,
+    priority: res.locals.taskPriority
+  });
   res.status(201).json({ data: task });
 };
 
@@ -26,8 +30,8 @@ export const patchTaskComplete = async (_req: Request, res: Response): Promise<v
   res.status(200).json({ data: task });
 };
 
-export const patchTaskTitle = async (_req: Request, res: Response): Promise<void> => {
-  const task = await updateTaskTitle(res.locals.taskId, res.locals.taskTitle);
+export const patchTask = async (_req: Request, res: Response): Promise<void> => {
+  const task = await updateTask(res.locals.taskId, res.locals.taskUpdate);
   res.status(200).json({ data: task });
 };
 

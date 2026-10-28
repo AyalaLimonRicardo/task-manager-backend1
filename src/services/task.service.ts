@@ -3,14 +3,23 @@ import { AppError } from '../errors/app-error.js';
 import {
   TaskModel,
   type Task,
-  type TaskPersistence
+  type TaskPersistence,
+  type TaskPriority,
+  type TaskUpdate
 } from '../models/task.js';
+
+export interface NewTask {
+  title: string;
+  description?: string;
+  priority?: TaskPriority;
+}
 
 const toTask = (document: HydratedDocument<TaskPersistence>): Task => ({
   id: document._id.toString(),
   title: document.title,
   ...(document.description ? { description: document.description } : {}),
   status: document.status,
+  priority: document.priority,
   createdAt: document.createdAt,
   updatedAt: document.updatedAt
 });
@@ -60,11 +69,12 @@ export const findTaskById = async (id: string): Promise<Task> => {
   }
 };
 
-export const createTask = async (title: string, description?: string): Promise<Task> => {
+export const createTask = async (input: NewTask): Promise<Task> => {
   try {
     const document = await TaskModel.create({
-      title,
-      ...(description ? { description } : {}),
+      title: input.title,
+      ...(input.description ? { description: input.description } : {}),
+      ...(input.priority ? { priority: input.priority } : {}),
       status: 'pending'
     });
     return toTask(document);
@@ -73,11 +83,15 @@ export const createTask = async (title: string, description?: string): Promise<T
   }
 };
 
-export const completeTask = async (id: string): Promise<Task> => {
+// Actualización parcial: $set modifica solo los campos recibidos y deja intactos los demás.
+export const updateTask = async (
+  id: string,
+  changes: TaskUpdate
+): Promise<Task> => {
   try {
     const document = await TaskModel.findByIdAndUpdate(
       id,
-      { status: 'completed' },
+      { $set: changes },
       { new: true, runValidators: true }
     );
     if (!document) throw notFound(id);
@@ -87,19 +101,9 @@ export const completeTask = async (id: string): Promise<Task> => {
   }
 };
 
-export const updateTaskTitle = async (id: string, title: string): Promise<Task> => {
-  try {
-    const document = await TaskModel.findByIdAndUpdate(
-      id,
-      { title },
-      { new: true, runValidators: true }
-    );
-    if (!document) throw notFound(id);
-    return toTask(document);
-  } catch (error: unknown) {
-    throw mapPersistenceError(error);
-  }
-};
+// Se conserva como compatibilidad: usa la misma consulta, validación y 404 que PATCH /:id.
+export const completeTask = async (id: string): Promise<Task> =>
+  updateTask(id, { status: 'completed' });
 
 export const deleteTask = async (id: string): Promise<void> => {
   try {

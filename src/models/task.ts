@@ -3,10 +3,15 @@ import { Schema, model } from 'mongoose';
 export const TASK_STATUSES = ['pending', 'completed'] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 
+// Desafío A7: prioridad opcional con valor predeterminado medium.
+export const TASK_PRIORITIES = ['low', 'medium', 'high'] as const;
+export type TaskPriority = (typeof TASK_PRIORITIES)[number];
+
 export interface TaskPersistence {
   title: string;
   description?: string;
   status: TaskStatus;
+  priority: TaskPriority;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -16,8 +21,16 @@ export interface Task {
   title: string;
   description?: string;
   status: TaskStatus;
+  priority: TaskPriority;
   createdAt: Date;
   updatedAt: Date;
+}
+
+// PATCH puede recibir cualquier combinación de estos campos, por eso todos son opcionales.
+export interface TaskUpdate {
+  title?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
 }
 
 const taskSchema = new Schema<TaskPersistence>(
@@ -37,6 +50,14 @@ const taskSchema = new Schema<TaskPersistence>(
       type: String,
       enum: TASK_STATUSES,
       default: 'pending'
+    },
+    priority: {
+      type: String,
+      enum: {
+        values: TASK_PRIORITIES,
+        message: 'La prioridad debe ser low, medium o high.'
+      },
+      default: 'medium'
     }
   },
   {
