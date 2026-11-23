@@ -419,6 +419,79 @@
       ]
     },
     {
+      "name": "Frontend: GET /api/auth/me",
+      "item": [
+        {
+          "name": "Me sin token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código 401', () => pm.response.to.have.status(401));",
+                  "pm.test('error.code = AUTHENTICATION_REQUIRED', () => pm.expect(pm.response.json().error.code).to.eql('AUTHENTICATION_REQUIRED'));",
+                  "pm.test('error.requestId presente', () => pm.expect(pm.response.json().error.requestId).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me con token válido",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código 200', () => pm.response.to.have.status(200));",
+                  "const u = pm.response.json().data.user;",
+                  "pm.test('id, name, email, role', () => { pm.expect(u.id).to.be.a('string'); pm.expect(u.email).to.be.a('string'); pm.expect(u.role).to.be.oneOf(['user','admin']); });",
+                  "pm.test('sin passwordHash', () => pm.expect(pm.response.text()).to.not.include('passwordHash'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "A10 Errores de autenticación",
       "item": [
         {

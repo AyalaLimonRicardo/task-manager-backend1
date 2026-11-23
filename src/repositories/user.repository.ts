@@ -65,6 +65,14 @@ export const findUserDocumentByEmail = async (
   return query;
 });
 
+export const findUserDocumentById = async (
+  id: string
+): Promise<UserDocument | null> => execute(async () => {
+  // Un id mal formado nunca existe: evita un CastError que se vería como 503.
+  if (!mongoose.Types.ObjectId.isValid(id)) return null;
+  return UserModel.findById(id);
+});
+
 export const createUserDocument = async (
   data: CreateUserRecord
 ): Promise<UserDocument> => execute(async () => UserModel.create(data));
