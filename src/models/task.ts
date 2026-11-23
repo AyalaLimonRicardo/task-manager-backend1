@@ -26,6 +26,13 @@ export interface Task {
   updatedAt: Date;
 }
 
+// Datos que acepta la creación; status siempre inicia en pending.
+export interface NewTask {
+  title: string;
+  description?: string;
+  priority?: TaskPriority;
+}
+
 // PATCH puede recibir cualquier combinación de estos campos, por eso todos son opcionales.
 export interface TaskUpdate {
   title?: string;

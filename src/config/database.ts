@@ -2,10 +2,14 @@ import mongoose from 'mongoose';
 import { env } from './env.js';
 
 export const connectDatabase = async (): Promise<void> => {
-  await mongoose.connect(env.mongodbUri, {
-    dbName: env.mongodbDbName,
+  await mongoose.connect(env.MONGODB_URI, {
+    dbName: env.MONGODB_DB_NAME,
     serverSelectionTimeoutMS: 5000
   });
+};
+
+export const disconnectDatabase = async (): Promise<void> => {
+  await mongoose.disconnect();
 };
 
 export const pingDatabase = async (): Promise<boolean> => {

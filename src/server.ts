@@ -1,16 +1,41 @@
-import { env } from './config/env.js';
-import { connectDatabase } from './config/database.js';
+import type { Server } from 'node:http';
 import { app } from './app.js';
+import { connectDatabase, disconnectDatabase } from './config/database.js';
+import { env } from './config/env.js';
 
-try {
-  await connectDatabase();
-  console.log('Conexión con MongoDB establecida.');
-} catch {
-  // No se imprime el error original: puede contener la URI o el host del clúster.
-  console.error('No fue posible conectar con MongoDB. Revisa .env, el usuario y el acceso de red en Atlas.');
-  process.exit(1);
+let server: Server | undefined;
+
+const start = async (): Promise<void> => {
+  try {
+    await connectDatabase();
+    console.log('Conexión con MongoDB establecida.');
+    server = app.listen(env.PORT, () => {
+      console.log(`API disponible en http://localhost:${env.PORT}`);
+    });
+  } catch {
+    // No se imprime el error original: puede contener la URI o el host del clúster.
+    console.error('No fue posible iniciar la API. Revisa la configuración y la conexión.');
+    process.exitCode = 1;
+  }
+};
+
+const shutdown = async (signal: string): Promise<void> => {
+  console.log(`Se recibió ${signal}. Cerrando la API.`);
+  if (server) {
+    await new Promise<void>((resolve, reject) => {
+      server?.close((error) => (error ? reject(error) : resolve()));
+    });
+  }
+  await disconnectDatabase();
+};
+
+for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+  process.once(signal, () => {
+    void shutdown(signal).catch(() => {
+      console.error('No fue posible cerrar la API correctamente.');
+      process.exitCode = 1;
+    });
+  });
 }
 
-app.listen(env.port, () => {
-  console.log(`API disponible en http://localhost:${env.port}`);
-});
+await start();
