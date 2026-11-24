@@ -1,2 +1,10 @@
+packages:
+  - '.'
+  - 'client'
 allowBuilds:
+  '@scarf/scarf': false
   esbuild: true
+overrides:
+  swagger-ui-dist: 5.35.0
+  tinybench: 6.2.3
+  mongoose: 8.24.7

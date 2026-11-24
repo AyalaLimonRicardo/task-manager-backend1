@@ -8,7 +8,6 @@ import {
   type UserDocument
 } from '../repositories/user.repository.js';
 import type {
-  AccessTokenSubject,
   LoginInput,
   LoginResult,
   RegisterInput,
@@ -80,19 +79,16 @@ export const loginUser = async (input: LoginInput): Promise<LoginResult> => {
   };
 };
 
-// Identidad actual: el id y el rol salen del JWT ya verificado, nunca del cliente.
-// El rol devuelto es el del token porque es el que authorize aplica en cada petición:
-// así la interfaz muestra exactamente lo que la API va a permitir. Si el rol cambió en
-// MongoDB, el usuario debe iniciar sesión de nuevo para obtener un token con el rol nuevo.
-export const getCurrentUser = async (subject: AccessTokenSubject): Promise<User> => {
-  const document = await findUserDocumentById(subject.userId);
+// Identidad actual (A11): el rol sale de MongoDB, no del token.
+// Si el rol cambió, authorize seguirá usando el del JWT hasta un nuevo login.
+export const getAuthenticatedUser = async (userId: string): Promise<User> => {
+  const document = await findUserDocumentById(userId);
   if (!document) {
-    // Cuenta eliminada con un token aún vigente: la sesión ya no es válida.
     throw new AppError(
-      'La cuenta asociada al token ya no existe.',
+      'La cuenta asociada al token ya no está disponible.',
       401,
-      'USER_NOT_FOUND'
+      'AUTHENTICATED_USER_NOT_FOUND'
     );
   }
-  return { ...toUser(document), role: subject.role };
+  return toUser(document);
 };

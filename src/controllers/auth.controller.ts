@@ -1,6 +1,5 @@
 import type { Request, Response } from 'express';
-import { AppError } from '../errors/app-error.js';
-import { getCurrentUser, loginUser, registerUser } from '../services/auth.service.js';
+import { getAuthenticatedUser, loginUser, registerUser } from '../services/auth.service.js';
 
 // Los datos ya fueron validados y viven en res.locals; no se lee req.body aquí.
 export const postRegister = async (_req: Request, res: Response): Promise<void> => {
@@ -15,7 +14,7 @@ export const postLogin = async (_req: Request, res: Response): Promise<void> => 
 export const getMe = async (_req: Request, res: Response): Promise<void> => {
   const auth = res.locals.auth;
   if (!auth) {
-    throw new AppError('Debes enviar un token de acceso.', 401, 'AUTHENTICATION_REQUIRED');
+    throw new Error('authenticate debe ejecutarse antes de getMe.');
   }
-  res.status(200).json({ data: { user: await getCurrentUser(auth) } });
+  res.status(200).json({ data: { user: await getAuthenticatedUser(auth.userId) } });
 };

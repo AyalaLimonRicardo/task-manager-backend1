@@ -22,6 +22,10 @@ const corsOptions: CorsOptions = {
 };
 
 export const securityHeaders = helmet();
+// Swagger UI necesita scripts y estilos en línea; la CSP se relaja solo en /api-docs.
+export const documentationSecurityHeaders = helmet({
+  contentSecurityPolicy: false
+});
 export const corsPolicy = cors(corsOptions);
 
 // Solo se aplica al router auth. El almacén por defecto es memoria: con varias
