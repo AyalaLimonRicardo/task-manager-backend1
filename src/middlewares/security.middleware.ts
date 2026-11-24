@@ -1,9 +1,11 @@
 import cors, { type CorsOptions } from 'cors';
 import { rateLimit } from 'express-rate-limit';
-import helmet = require("helmet");
+import { createRequire } from 'node:module';
 import { env } from '../config/env.js';
 import { AppError } from '../errors/app-error.js';
 
+const require = createRequire(import.meta.url);
+const helmet = require('helmet');
 const corsOptions: CorsOptions = {
   origin(origin, callback) {
     // Sin Origin (Postman, apps móviles, servidor a servidor) se permite;
