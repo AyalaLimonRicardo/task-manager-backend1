@@ -1,6 +1,6 @@
 import cors, { type CorsOptions } from 'cors';
 import { rateLimit } from 'express-rate-limit';
-import helmet from "helmet";
+import helmet = require("helmet");
 import { env } from '../config/env.js';
 import { AppError } from '../errors/app-error.js';
 
