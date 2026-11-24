@@ -28,6 +28,14 @@ vi.mock('../src/services/task.service.js', () => ({
   deleteTask: mocks.deleteTask
 }));
 
+// Sin Atlas: la conexión bajo demanda y el ping se sustituyen por dobles.
+vi.mock('../src/config/database.js', () => ({
+  connectDatabase: vi.fn(async () => undefined),
+  disconnectDatabase: vi.fn(async () => undefined),
+  ensureDatabase: vi.fn(async () => undefined),
+  pingDatabase: vi.fn(async () => true)
+}));
+
 const { app } = await import('../src/app.js');
 const { createAccessToken } = await import('../src/services/token.service.js');
 
@@ -58,7 +66,11 @@ describe('API', () => {
   it('GET /health responde 200', async () => {
     const response = await request(app).get('/health');
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ status: 'ok' });
+    expect(response.body).toEqual({
+      status: 'ok',
+      version: '1.0.0-test',
+      environment: 'test'
+    });
     expect(response.headers['x-request-id']).toBeDefined();
   });
 
@@ -138,6 +150,8 @@ describe('API', () => {
     const response = await request(app).get('/api-docs.json');
     expect(response.status).toBe(200);
     expect(response.body.openapi).toBe('3.1.0');
+    expect(response.body.info.version).toBe('1.0.0-test');
+    expect(response.body.servers[0].url).toBe('http://localhost:3000');
     expect(Object.keys(response.body.paths)).toEqual(
       expect.arrayContaining(['/api/auth/login', '/api/auth/me', '/api/tasks/{id}'])
     );

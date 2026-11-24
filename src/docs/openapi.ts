@@ -1,3 +1,5 @@
+import { env } from '../config/env.js';
+
 // Contrato OpenAPI 3.1 de la API. Debe coincidir con el comportamiento real del código.
 const errorResponse = (description: string) => ({
   description,
@@ -12,10 +14,15 @@ export const openApiDocument = {
   openapi: '3.1.0',
   info: {
     title: 'Task API',
-    version: '1.0.0',
+    version: env.APP_VERSION,
     description: 'API REST de tareas con autenticación JWT y roles.'
   },
-  servers: [{ url: 'http://localhost:3000', description: 'Desarrollo local' }],
+  servers: [
+    {
+      url: env.PUBLIC_API_URL,
+      description: env.NODE_ENV === 'production' ? 'Producción' : 'Desarrollo local'
+    }
+  ],
   tags: [
     { name: 'Health' },
     { name: 'Auth' },

@@ -22,3 +22,16 @@ export const pingDatabase = async (): Promise<boolean> => {
     return false;
   }
 };
+
+// En Vercel cada instancia arranca en frío y no pasa por server.ts: la conexión se abre
+// bajo demanda y se reutiliza mientras la instancia siga viva. Las solicitudes simultáneas
+// comparten la misma promesa para no abrir varias conexiones.
+let connecting: Promise<void> | undefined;
+
+export const ensureDatabase = async (): Promise<void> => {
+  if (mongoose.connection.readyState === 1) return;
+  connecting ??= connectDatabase().finally(() => {
+    connecting = undefined;
+  });
+  await connecting;
+};
